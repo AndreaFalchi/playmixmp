@@ -259,7 +259,6 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                     isActive = index == currentIndex,
                     isPlaying = index == currentIndex && p1IsPlaying,
                     progress = progress,
-                    showCuePoints = viewModel.showCuePoints,
                     onClick = { viewModel.playNewSong(index) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
@@ -276,7 +275,7 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Total: ${viewModel.totalSongs} songs", style = MaterialTheme.typography.labelMedium)
-                Text("Time: ${formatDuration(viewModel.totalDuration)}", style = MaterialTheme.typography.labelMedium)
+                Text("Time: ${formatPlaylistDuration(viewModel.totalDuration)}", style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -288,7 +287,6 @@ fun SongItem(
     isActive: Boolean,
     isPlaying: Boolean,
     progress: Float,
-    showCuePoints: Boolean,
     onClick: () -> Unit
 ) {
     val titleColor = when {
@@ -317,7 +315,7 @@ fun SongItem(
                     fontSize = 18.sp
                 )
                 Text(
-                    text = song.artist,
+                    text = if (song.comment.isNullOrEmpty()) song.artist else "${song.artist} [${song.comment}]",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
@@ -331,19 +329,6 @@ fun SongItem(
             }
         }
         
-        if (showCuePoints && song.traktorCuePoints.isNotEmpty()) {
-            Row(modifier = Modifier.padding(top = 4.dp)) {
-                song.traktorCuePoints.forEach { _ ->
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp, 4.dp)
-                            .background(Color.Yellow)
-                            .padding(horizontal = 1.dp)
-                    )
-                }
-            }
-        }
-
         if (isActive) {
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
@@ -379,6 +364,35 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatDuration(position), style = MaterialTheme.typography.labelSmall)
                 Text("-${formatDuration(duration - position)}", style = MaterialTheme.typography.labelSmall)
+            }
+        }
+
+        if (viewModel.showCuePoints && currentSong != null && currentSong.traktorCuePoints.any { it.hotcueIndex != -1 }) {
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                currentSong.traktorCuePoints
+                    .filter { it.hotcueIndex != -1 }
+                    .sortedBy { it.hotcueIndex }
+                    .forEach { cue ->
+                        Surface(
+                            color = Color.Green,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { viewModel.jumpToCue(cue) }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = cue.hotcueIndex.toString(),
+                                    color = Color.Black,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
             }
         }
 
@@ -421,7 +435,25 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
 fun formatDuration(ms: Long): String {
     val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return "${minutes}:${seconds.toString().padStart(2, '0')}"
+    
+    return if (hours > 0) {
+        "${hours}h ${minutes.toString().padStart(2, '0')}m"
+    } else {
+        "${minutes}:${seconds.toString().padStart(2, '0')}"
+    }
+}
+
+fun formatPlaylistDuration(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    
+    return if (hours > 0) {
+        "${hours}h ${minutes}m"
+    } else {
+        "${minutes}m"
+    }
 }

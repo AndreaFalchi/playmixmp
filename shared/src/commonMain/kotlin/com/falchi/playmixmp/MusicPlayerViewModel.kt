@@ -130,6 +130,7 @@ class MusicPlayerViewModel(
 
                     matchedSong?.copy(
                         isInTraktorPlaylist = true,
+                        comment = trackInfo?.comment,
                         traktorBpm = trackInfo?.bpm,
                         traktorCuePoints = trackInfo?.cuePoints ?: emptyList()
                     )
@@ -177,6 +178,13 @@ class MusicPlayerViewModel(
 
     fun seekTo(positionMs: Long) {
         primaryPlayer.value.seekTo(positionMs)
+    }
+
+    fun jumpToCue(cue: TraktorCuePoint) {
+        primaryPlayer.value.seekTo(cue.startTimeMs)
+        if (!primaryPlayer.value.isPlaying.value) {
+            primaryPlayer.value.play()
+        }
     }
 
     fun adjustCrossfade(deltaMs: Long) {

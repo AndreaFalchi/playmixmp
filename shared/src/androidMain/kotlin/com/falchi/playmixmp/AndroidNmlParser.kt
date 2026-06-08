@@ -15,6 +15,7 @@ class AndroidNmlParser : NmlParser {
         var currentTrackKey: String? = null
         var currentTitle: String? = null
         var currentArtist: String? = null
+        var currentComment: String? = null
         var currentFile: String? = null
         var currentBpm: Float? = null
         val currentCuePoints = mutableListOf<TraktorCuePoint>()
@@ -26,15 +27,17 @@ class AndroidNmlParser : NmlParser {
                     "ENTRY" -> {
                         currentTitle = parser.getAttributeValue(null, "TITLE")
                         currentArtist = parser.getAttributeValue(null, "ARTIST")
+                        currentComment = null
                         currentCuePoints.clear()
                         currentBpm = null
+                    }
+                    "INFO" -> {
+                        currentComment = parser.getAttributeValue(null, "COMMENT")
                     }
                     "LOCATION" -> {
                         val file = parser.getAttributeValue(null, "FILE")
                         currentFile = file
-                        // The KEY in Traktor NML is often a full path like "C:/:Users/.../:file.mp3"
-                        // We extract the filename to make it match with what Android provides
-                        currentTrackKey = file ?: parser.getAttributeValue(null, "VOLUME") // Fallback
+                        currentTrackKey = file ?: parser.getAttributeValue(null, "VOLUME")
                     }
                     "TEMPO" -> {
                         currentBpm = parser.getAttributeValue(null, "BPM")?.toFloatOrNull()
@@ -42,8 +45,9 @@ class AndroidNmlParser : NmlParser {
                     "CUE_V2" -> {
                         val name = parser.getAttributeValue(null, "NAME")
                         val start = parser.getAttributeValue(null, "START")?.toDoubleOrNull()
+                        val hotcue = parser.getAttributeValue(null, "HOTCUE")?.toIntOrNull() ?: -1
                         if (start != null) {
-                            currentCuePoints.add(TraktorCuePoint(name ?: "Cue", (start * 1000).toLong()))
+                            currentCuePoints.add(TraktorCuePoint(name ?: "Cue", start.toLong(), hotcue))
                         }
                     }
                     "PRIMARYKEY" -> {
@@ -58,6 +62,7 @@ class AndroidNmlParser : NmlParser {
                         title = currentTitle ?: "",
                         artist = currentArtist ?: "",
                         fileName = currentFile,
+                        comment = currentComment,
                         bpm = currentBpm,
                         cuePoints = currentCuePoints.toList()
                     )

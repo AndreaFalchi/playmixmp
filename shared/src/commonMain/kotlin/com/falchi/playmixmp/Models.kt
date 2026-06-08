@@ -15,7 +15,8 @@ data class SongProgress(
 
 data class TraktorCuePoint(
     val name: String,
-    val startTimeMs: Long
+    val startTimeMs: Long,
+    val hotcueIndex: Int = -1
 )
 
 data class Song(
@@ -26,6 +27,7 @@ data class Song(
     val duration: Long,
     val fileName: String? = null,
     val contentUri: String, // String for KMP compatibility
+    val comment: String? = null,
 
     var isInTraktorPlaylist: Boolean = false,
     var traktorOrder: Int = -1,
