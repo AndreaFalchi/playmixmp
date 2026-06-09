@@ -23,8 +23,10 @@ class MusicPlayerViewModel(
     var isAutoplayEnabled by mutableStateOf(false)
     var isCurrentlyAutomixing by mutableStateOf(false)
     var crossfadeDurationMs by mutableStateOf(6000L) // Default 6s
+    var automixLeadTimeMs by mutableStateOf(15000L) // Default 15s
     
     var showCuePoints by mutableStateOf(true)
+    var isGrayscaleTheme by mutableStateOf(false)
 
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
@@ -64,7 +66,7 @@ class MusicPlayerViewModel(
         while (primaryPlayer.value.isPlaying.value && isAutoplayEnabled && !isCurrentlyAutomixing) {
             val currentPos = primaryPlayer.value.currentPosition.value
             val duration = primaryPlayer.value.duration.value
-            if (duration > 0 && (duration - currentPos) <= (crossfadeDurationMs + 2000L) && currentPos > 5000) {
+            if (duration > 0 && (duration - currentPos) <= (automixLeadTimeMs) && currentPos > 5000) {
                 initiateAutomix()
                 break
             }

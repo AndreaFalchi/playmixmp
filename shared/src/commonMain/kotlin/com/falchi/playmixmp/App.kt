@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -22,10 +24,9 @@ import kotlin.time.Clock
 @Composable
 fun App(viewModel: MusicPlayerViewModel) {
     var isLocked by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
     var showAboutPage by remember { mutableStateOf(false) }
 
-    AppTheme {
+    AppTheme(isGrayscale = viewModel.isGrayscaleTheme) {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
 
@@ -67,15 +68,6 @@ fun App(viewModel: MusicPlayerViewModel) {
                         selected = false,
                         onClick = {
                             viewModel.onPickTraktorFile?.invoke()
-                            scope.launch { drawerState.close() }
-                        }
-                    )
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                        label = { Text("Settings") },
-                        selected = false,
-                        onClick = {
-                            showSettingsDialog = true
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -150,12 +142,8 @@ fun App(viewModel: MusicPlayerViewModel) {
                         LockOverlay(onUnlock = { isLocked = false })
                     }
 
-                    if (showSettingsDialog) {
-                        SettingsDialog(viewModel, onDismiss = { showSettingsDialog = false })
-                    }
-
                     if (showAboutPage) {
-                        AboutPage(onDismiss = { showAboutPage = false })
+                        AboutPage(viewModel, onDismiss = { showAboutPage = false })
                     }
                 }
             }
@@ -164,45 +152,64 @@ fun App(viewModel: MusicPlayerViewModel) {
 }
 
 @Composable
-fun SettingsDialog(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Settings") },
-        text = {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = viewModel.showCuePoints, onCheckedChange = { viewModel.showCuePoints = it })
-                    Text("Show Cue Points")
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        }
-    )
-}
-
-@Composable
-fun AboutPage(onDismiss: () -> Unit) {
+fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier.padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.padding(32.dp).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("About this App", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "PlayM1X MP is a professional music player designed for seamless automixing and Traktor integration. It allows you to organize your music using Traktor NML playlists and perform smooth transitions with customizable crossfade.",
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+            Text("About", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Settings section
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = viewModel.showCuePoints, onCheckedChange = { viewModel.showCuePoints = it })
+                    Text("Show Cue Points")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = viewModel.isGrayscaleTheme, onCheckedChange = { viewModel.isGrayscaleTheme = it })
+                    Text("Black & White Theme")
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text("Automix Lead Time: ${viewModel.automixLeadTimeMs / 1000}s", style = MaterialTheme.typography.titleMedium)
+                Slider(
+                    value = (viewModel.automixLeadTimeMs / 1000).toFloat(),
+                    onValueChange = { viewModel.automixLeadTimeMs = it.toLong() * 1000L },
+                    valueRange = 0f..60f,
+                    steps = 59
+                )
+                Text("Adjusts how many seconds before the end of the song the automix starts.", style = MaterialTheme.typography.labelSmall)
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onDismiss) {
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // About section
+            Text("About this app", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Palym1xMP is an audio player desgined for simple and effective mixing.",
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Version: 1.0.0", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text("Back")
             }
+
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
