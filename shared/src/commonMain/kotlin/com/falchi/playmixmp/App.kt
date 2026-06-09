@@ -1,6 +1,5 @@
 package com.falchi.playmixmp
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,10 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-
-val ColorPlaying = Color(0xFF4CAF50)
-val ColorPaused = Color(0xFF2196F3)
-val ColorTraktor = Color(0xFFE91E63) // Original app pink/red for Traktor matches
+import kotlin.time.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +28,7 @@ fun App(viewModel: MusicPlayerViewModel) {
     AppTheme {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
-        
+
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
@@ -40,7 +36,7 @@ fun App(viewModel: MusicPlayerViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("PlayM1X Menu", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
                     HorizontalDivider()
-                    
+
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                         label = { Text("Main Downloads") },
@@ -50,7 +46,7 @@ fun App(viewModel: MusicPlayerViewModel) {
                             scope.launch { drawerState.close() }
                         }
                     )
-                    
+
                     // Dynamic subfolder entries
                     viewModel.subfolders.forEach { (name, path) ->
                         NavigationDrawerItem(
@@ -130,7 +126,7 @@ fun App(viewModel: MusicPlayerViewModel) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     BoxWithConstraints(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
                         val isLandscape = maxWidth > maxHeight
-                        
+
                         if (isLandscape) {
                             Row(modifier = Modifier.fillMaxSize()) {
                                 Box(modifier = Modifier.weight(1f)) {
@@ -153,7 +149,7 @@ fun App(viewModel: MusicPlayerViewModel) {
                     if (isLocked) {
                         LockOverlay(onUnlock = { isLocked = false })
                     }
-                    
+
                     if (showSettingsDialog) {
                         SettingsDialog(viewModel, onDismiss = { showSettingsDialog = false })
                     }
@@ -218,7 +214,7 @@ fun LockOverlay(onUnlock: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
+            .background(ColorLockOverlay)
             .clickable(
                 interactionSource = null,
                 indication = null
@@ -239,7 +235,7 @@ fun LockOverlay(onUnlock: () -> Unit) {
     }
 }
 
-fun now(): Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+fun now(): Long = Clock.System.now().toEpochMilliseconds()
 
 
 @Composable
@@ -255,13 +251,14 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             itemsIndexed(songs) { index, song ->
                 SongItem(
+                    index = index,
                     song = song,
                     isActive = index == currentIndex,
                     isPlaying = index == currentIndex && p1IsPlaying,
                     progress = progress,
                     onClick = { viewModel.playNewSong(index) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = ColorDivider)
             }
         }
         
@@ -283,6 +280,7 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
 
 @Composable
 fun SongItem(
+    index: Int,
     song: Song,
     isActive: Boolean,
     isPlaying: Boolean,
@@ -309,7 +307,7 @@ fun SongItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = song.title,
+                    text = "${index + 1}. ${song.title}",
                     color = titleColor,
                     fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                     fontSize = 18.sp
@@ -320,12 +318,22 @@ fun SongItem(
                     fontSize = 14.sp
                 )
             }
-            if (song.traktorBpm != null) {
-                Text(
-                    text = "${song.traktorBpm!!.toInt()} BPM",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = ColorTraktor
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!song.traktorKey.isNullOrEmpty()) {
+                    Text(
+                        text = song.traktorKey!!,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ColorTraktor,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+                if (song.traktorBpm != null) {
+                    Text(
+                        text = "${song.traktorBpm!!.toInt()} BPM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ColorTraktor
+                    )
+                }
             }
         }
         
@@ -348,7 +356,7 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = currentSong?.let { "Playing: ${it.title}" } ?: "No song selected",
+            text = currentSong?.let { "Playing: ${viewModel.currentPlayingSongIndex + 1}. ${it.title}" } ?: "No song selected",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -377,10 +385,10 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                     .sortedBy { it.hotcueIndex }
                     .forEach { cue ->
                         Surface(
-                            color = Color.Green,
+                            color = ColorCuePoint,
                             shape = MaterialTheme.shapes.extraSmall,
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(48.dp)
                                 .clickable { viewModel.jumpToCue(cue) }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -398,36 +406,39 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
                 onClick = { viewModel.triggerManualAutomix() },
                 enabled = !viewModel.isCurrentlyAutomixing && viewModel.currentPlayingSongIndex < viewModel.songList.size - 1,
-                modifier = Modifier.height(56.dp)
+                modifier = Modifier.fillMaxWidth().height(64.dp)
             ) {
-                Text("AUTOMIX")
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Autoplay", style = MaterialTheme.typography.labelMedium)
-                Switch(
-                    checked = viewModel.isAutoplayEnabled,
-                    onCheckedChange = { viewModel.isAutoplayEnabled = it }
-                )
+                Text("AUTOMIX", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
         
         Row(
-            modifier = Modifier.padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { viewModel.adjustCrossfade(-2000L) }) {
-                Icon(Icons.Default.Remove, contentDescription = "Decrease XFade")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { viewModel.adjustCrossfade(-2000L) }) {
+                    Icon(Icons.Default.Remove, contentDescription = "Decrease XFade")
+                }
+                Text("XFade: ${viewModel.crossfadeDurationMs / 1000}s", modifier = Modifier.padding(horizontal = 8.dp))
+                IconButton(onClick = { viewModel.adjustCrossfade(2000L) }) {
+                    Icon(Icons.Default.Add, contentDescription = "Increase XFade")
+                }
             }
-            Text("XFade: ${viewModel.crossfadeDurationMs / 1000}s", modifier = Modifier.padding(horizontal = 8.dp))
-            IconButton(onClick = { viewModel.adjustCrossfade(2000L) }) {
-                Icon(Icons.Default.Add, contentDescription = "Increase XFade")
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Autoplay", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(end = 8.dp))
+                Switch(
+                    checked = viewModel.isAutoplayEnabled,
+                    onCheckedChange = { viewModel.isAutoplayEnabled = it }
+                )
             }
         }
     }

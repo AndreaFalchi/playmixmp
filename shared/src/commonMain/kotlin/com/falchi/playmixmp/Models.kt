@@ -32,6 +32,7 @@ data class Song(
     var isInTraktorPlaylist: Boolean = false,
     var traktorOrder: Int = -1,
     var traktorBpm: Float? = null,
+    var traktorKey: String? = null,
     var nmlFileAttribute: String? = null,
     var nmlMatchedTitle: String? = null,
     var traktorCuePoints: List<TraktorCuePoint> = emptyList()

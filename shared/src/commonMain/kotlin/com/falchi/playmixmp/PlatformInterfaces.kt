@@ -35,5 +35,6 @@ data class TraktorCollectionTrack(
     val artist: String?,
     val comment: String?,
     val bpm: Float?,
+    val traktorKey: String?,
     val cuePoints: List<TraktorCuePoint>
 )

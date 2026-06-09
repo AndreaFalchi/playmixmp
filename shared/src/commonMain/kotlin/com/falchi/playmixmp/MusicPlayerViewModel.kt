@@ -132,6 +132,7 @@ class MusicPlayerViewModel(
                         isInTraktorPlaylist = true,
                         comment = trackInfo?.comment,
                         traktorBpm = trackInfo?.bpm,
+                        traktorKey = trackInfo?.traktorKey,
                         traktorCuePoints = trackInfo?.cuePoints ?: emptyList()
                     )
                 }

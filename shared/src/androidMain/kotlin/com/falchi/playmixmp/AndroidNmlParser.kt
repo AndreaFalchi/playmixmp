@@ -16,6 +16,7 @@ class AndroidNmlParser : NmlParser {
         var currentTitle: String? = null
         var currentArtist: String? = null
         var currentComment: String? = null
+        var currentTraktorKey: String? = null
         var currentFile: String? = null
         var currentBpm: Float? = null
         val currentCuePoints = mutableListOf<TraktorCuePoint>()
@@ -33,6 +34,7 @@ class AndroidNmlParser : NmlParser {
                     }
                     "INFO" -> {
                         currentComment = parser.getAttributeValue(null, "COMMENT")
+                        currentTraktorKey = parser.getAttributeValue(null, "KEY")
                     }
                     "LOCATION" -> {
                         val file = parser.getAttributeValue(null, "FILE")
@@ -64,6 +66,7 @@ class AndroidNmlParser : NmlParser {
                         fileName = currentFile,
                         comment = currentComment,
                         bpm = currentBpm,
+                        traktorKey = currentTraktorKey,
                         cuePoints = currentCuePoints.toList()
                     )
                     currentTrackKey = null
