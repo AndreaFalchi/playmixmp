@@ -175,6 +175,11 @@ fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                     Checkbox(checked = viewModel.isGrayscaleTheme, onCheckedChange = { viewModel.isGrayscaleTheme = it })
                     Text("Black & White Theme")
                 }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = viewModel.isReorderingEnabled, onCheckedChange = { viewModel.isReorderingEnabled = it })
+                    Text("Enable Reordering")
+                }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
@@ -263,6 +268,10 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                     isActive = index == currentIndex,
                     isPlaying = index == currentIndex && p1IsPlaying,
                     progress = progress,
+                    isReorderEnabled = viewModel.isReorderingEnabled,
+                    isMoved = index == viewModel.lastMovedIndex,
+                    onMoveUp = { if (index > 0) viewModel.moveSong(index, index - 1) },
+                    onMoveDown = { if (index < songs.size - 1) viewModel.moveSong(index, index + 1) },
                     onClick = { viewModel.playNewSong(index) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = ColorDivider)
@@ -292,6 +301,10 @@ fun SongItem(
     isActive: Boolean,
     isPlaying: Boolean,
     progress: Float,
+    isReorderEnabled: Boolean,
+    isMoved: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onClick: () -> Unit
 ) {
     val titleColor = when {
@@ -301,56 +314,89 @@ fun SongItem(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    Column(
+    val backgroundColor = if (isReorderEnabled && isMoved) ColorMoving.copy(alpha = 0.2f) else Color.Transparent
+
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp)
+            .padding(vertical = 2.dp, horizontal = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        color = backgroundColor
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${index + 1}. ${song.title}",
-                    color = titleColor,
-                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 18.sp
-                )
-                Text(
-                    text = if (song.comment.isNullOrEmpty()) song.artist else "${song.artist} [${song.comment}]",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!song.traktorKey.isNullOrEmpty()) {
-                    Text(
-                        text = song.traktorKey!!,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ColorTraktor,
-                        modifier = Modifier.padding(end = 8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${index + 1}. ${song.title}",
+                            color = titleColor,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            text = if (song.comment.isNullOrEmpty()) song.artist else "${song.artist} [${song.comment}]",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (!song.traktorKey.isNullOrEmpty()) {
+                            Text(
+                                text = song.traktorKey!!,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = ColorTraktor,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        if (song.traktorBpm != null) {
+                            Text(
+                                text = "${song.traktorBpm!!.toInt()} BPM",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = ColorTraktor
+                            )
+                        }
+                    }
+                }
+                
+                if (isActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = titleColor
                     )
                 }
-                if (song.traktorBpm != null) {
-                    Text(
-                        text = "${song.traktorBpm!!.toInt()} BPM",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ColorTraktor
+            }
+
+            if (isReorderEnabled) {
+                Row(
+                    modifier = Modifier.padding(start = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onMoveUp) {
+                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move Up")
+                    }
+                    Icon(
+                        Icons.Default.DragHandle, 
+                        contentDescription = "Reorder",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    IconButton(onClick = onMoveDown) {
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move Down")
+                    }
                 }
             }
-        }
-        
-        if (isActive) {
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
-                color = titleColor
-            )
         }
     }
 }

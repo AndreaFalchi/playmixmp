@@ -12,18 +12,21 @@ val ColorPlayingDefault = Color(0xFF10B981) // Verde smeraldo
 val ColorPausedDefault = Color(0xFF3B82F6)  // Blu moderno
 val ColorTraktorDefault = Color(0xFFEF4444) // Rosso corallo
 val ColorCuePointDefault = Color(0xFFF59E0B) // Ambra
+val ColorMovingDefault = Color(0xFFFACC15)   // Giallo brillante: Canzone che viene spostata
 
 // --- COLORI DELLO STATO DELLA RIPRODUZIONE (GRAYSCALE) ---
 val ColorPlayingGrayscale = Color(0xFFFFFFFF) // Bianco
 val ColorPausedGrayscale = Color(0xFFBDBDBD)  // Grigio chiaro
 val ColorTraktorGrayscale = Color(0xFF757575) // Grigio medio
 val ColorCuePointGrayscale = Color(0xFF9E9E9E) // Grigio
+val ColorMovingGrayscale = Color(0xFFE0E0E0)   // Grigio chiaro
 
 // Variabili globali che cambiano in base al tema
 var ColorPlaying = ColorPlayingDefault
 var ColorPaused = ColorPausedDefault
 var ColorTraktor = ColorTraktorDefault
 var ColorCuePoint = ColorCuePointDefault
+var ColorMoving = ColorMovingDefault
 
 // --- COLORI DEGLI ELEMENTI UI FISSI ---
 val ColorLockOverlay = Color(0xFF121212).copy(alpha = 0.8f) // Nero antracite trasparente
@@ -76,11 +79,13 @@ fun AppTheme(
         ColorPaused = ColorPausedGrayscale
         ColorTraktor = ColorTraktorGrayscale
         ColorCuePoint = ColorCuePointGrayscale
+        ColorMoving = ColorMovingGrayscale
     } else {
         ColorPlaying = ColorPlayingDefault
         ColorPaused = ColorPausedDefault
         ColorTraktor = ColorTraktorDefault
         ColorCuePoint = ColorCuePointDefault
+        ColorMoving = ColorMovingDefault
     }
 
     MaterialTheme(

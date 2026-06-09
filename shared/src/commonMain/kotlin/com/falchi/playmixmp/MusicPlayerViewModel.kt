@@ -27,6 +27,8 @@ class MusicPlayerViewModel(
     
     var showCuePoints by mutableStateOf(true)
     var isGrayscaleTheme by mutableStateOf(false)
+    var isReorderingEnabled by mutableStateOf(false)
+    var lastMovedIndex by mutableStateOf(-1)
 
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
@@ -198,6 +200,26 @@ class MusicPlayerViewModel(
         if (!isCurrentlyAutomixing && currentPlayingSongIndex in 0 until songList.size - 1) {
             initiateAutomix()
         }
+    }
+
+    fun moveSong(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in songList.indices || toIndex !in songList.indices || fromIndex == toIndex) return
+        
+        val mutableList = songList.toMutableList()
+        val song = mutableList.removeAt(fromIndex)
+        mutableList.add(toIndex, song)
+        
+        // Update currentPlayingSongIndex to track the same song
+        val newPlayingIndex = when {
+            currentPlayingSongIndex == fromIndex -> toIndex
+            fromIndex < currentPlayingSongIndex && toIndex >= currentPlayingSongIndex -> currentPlayingSongIndex - 1
+            fromIndex > currentPlayingSongIndex && toIndex <= currentPlayingSongIndex -> currentPlayingSongIndex + 1
+            else -> currentPlayingSongIndex
+        }
+        
+        currentPlayingSongIndex = newPlayingIndex
+        songList = mutableList
+        lastMovedIndex = toIndex
     }
 
     private fun initiateAutomix() {
