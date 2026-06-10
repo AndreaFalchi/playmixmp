@@ -279,6 +279,15 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
         }
         
         // Playlist Metadata
+        val playedSongs = if (currentIndex >= 0) currentIndex + 1 else 0
+        val remainingPlaylistMs = if (currentIndex >= 0) {
+            val currentSongRemaining = (p1Duration - p1Position).coerceAtLeast(0L)
+            val futureSongsDuration = songs.drop(currentIndex + 1).sumOf { it.duration }
+            currentSongRemaining + futureSongsDuration
+        } else {
+            viewModel.totalDuration
+        }
+
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.fillMaxWidth()
@@ -287,8 +296,8 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Total: ${viewModel.totalSongs} songs", style = MaterialTheme.typography.labelMedium)
-                Text("Time: ${formatPlaylistDuration(viewModel.totalDuration)}", style = MaterialTheme.typography.labelMedium)
+                Text("Total: $playedSongs / ${viewModel.totalSongs}", style = MaterialTheme.typography.labelMedium)
+                Text("Time: ${formatPlaylistDuration(remainingPlaylistMs)} / ${formatPlaylistDuration(viewModel.totalDuration)}", style = MaterialTheme.typography.labelMedium)
             }
         }
     }
