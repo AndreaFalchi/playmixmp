@@ -180,6 +180,14 @@ fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                     Checkbox(checked = viewModel.isReorderingEnabled, onCheckedChange = { viewModel.isReorderingEnabled = it })
                     Text("Enable Reordering")
                 }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = viewModel.isAlwaysOnTop,
+                        onCheckedChange = { viewModel.toggleAlwaysOnTop(it) }
+                    )
+                    Text("Always on Top (Foreground)")
+                }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
@@ -201,13 +209,16 @@ fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
             Text("About this app", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Palym1xMP is an audio player desgined for simple and effective mixing.",
+                "Playm1xMP is an audio player desgined for simple and effective mixing and can manage playlists create in Traktor.",
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Credits: Andrea Falchi 2026", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Version: 1.0.0", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            
+            Text("Version: ${getPlatform().version}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
             Spacer(modifier = Modifier.height(32.dp))
             
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {

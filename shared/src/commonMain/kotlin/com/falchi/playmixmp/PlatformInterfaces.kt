@@ -28,6 +28,12 @@ interface NmlParser {
     suspend fun parse(xmlData: String): Pair<Map<String, TraktorCollectionTrack>, List<String>>
 }
 
+interface PlatformActions {
+    fun setAlwaysOnTop(enabled: Boolean)
+    fun isAlwaysOnTopPermissionGranted(): Boolean
+    fun requestAlwaysOnTopPermission()
+}
+
 data class TraktorCollectionTrack(
     val key: String,
     val title: String?,

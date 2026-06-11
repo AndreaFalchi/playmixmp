@@ -9,6 +9,7 @@ class MusicPlayerViewModel(
     private val player2: AudioPlayer,
     private val mediaLibrary: MediaLibrary,
     private val nmlParser: NmlParser,
+    private val platformActions: PlatformActions,
     private val scope: CoroutineScope
 ) {
     var songList by mutableStateOf<List<Song>>(emptyList())
@@ -29,6 +30,8 @@ class MusicPlayerViewModel(
     var isGrayscaleTheme by mutableStateOf(false)
     var isReorderingEnabled by mutableStateOf(false)
     var lastMovedIndex by mutableStateOf(-1)
+
+    var isAlwaysOnTop by mutableStateOf(false)
 
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
@@ -220,6 +223,20 @@ class MusicPlayerViewModel(
         currentPlayingSongIndex = newPlayingIndex
         songList = mutableList
         lastMovedIndex = toIndex
+    }
+
+    fun toggleAlwaysOnTop(enabled: Boolean) {
+        if (enabled) {
+            if (platformActions.isAlwaysOnTopPermissionGranted()) {
+                isAlwaysOnTop = true
+                platformActions.setAlwaysOnTop(true)
+            } else {
+                platformActions.requestAlwaysOnTopPermission()
+            }
+        } else {
+            isAlwaysOnTop = false
+            platformActions.setAlwaysOnTop(false)
+        }
     }
 
     private fun initiateAutomix() {
