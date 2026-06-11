@@ -10,6 +10,7 @@ class MusicPlayerViewModel(
     private val mediaLibrary: MediaLibrary,
     private val nmlParser: NmlParser,
     private val platformActions: PlatformActions,
+    private val settingsRepository: SettingsRepository,
     private val scope: CoroutineScope
 ) {
     var songList by mutableStateOf<List<Song>>(emptyList())
@@ -21,17 +22,65 @@ class MusicPlayerViewModel(
     var currentPlayingSongIndex by mutableStateOf(-1)
         private set
 
-    var isAutoplayEnabled by mutableStateOf(false)
+    private var _isAutoplayEnabled by mutableStateOf(settingsRepository.getBoolean("isAutoplayEnabled", false))
+    var isAutoplayEnabled: Boolean
+        get() = _isAutoplayEnabled
+        set(value) {
+            _isAutoplayEnabled = value
+            settingsRepository.putBoolean("isAutoplayEnabled", value)
+        }
+
     var isCurrentlyAutomixing by mutableStateOf(false)
-    var crossfadeDurationMs by mutableStateOf(6000L) // Default 6s
-    var automixLeadTimeMs by mutableStateOf(15000L) // Default 15s
+
+    private var _crossfadeDurationMs by mutableStateOf(settingsRepository.getLong("crossfadeDurationMs", 6000L))
+    var crossfadeDurationMs: Long
+        get() = _crossfadeDurationMs
+        set(value) {
+            _crossfadeDurationMs = value
+            settingsRepository.putLong("crossfadeDurationMs", value)
+        }
+
+    private var _automixLeadTimeMs by mutableStateOf(settingsRepository.getLong("automixLeadTimeMs", 15000L))
+    var automixLeadTimeMs: Long
+        get() = _automixLeadTimeMs
+        set(value) {
+            _automixLeadTimeMs = value
+            settingsRepository.putLong("automixLeadTimeMs", value)
+        }
     
-    var showCuePoints by mutableStateOf(true)
-    var isGrayscaleTheme by mutableStateOf(false)
-    var isReorderingEnabled by mutableStateOf(false)
+    private var _showCuePoints by mutableStateOf(settingsRepository.getBoolean("showCuePoints", true))
+    var showCuePoints: Boolean
+        get() = _showCuePoints
+        set(value) {
+            _showCuePoints = value
+            settingsRepository.putBoolean("showCuePoints", value)
+        }
+
+    private var _isGrayscaleTheme by mutableStateOf(settingsRepository.getBoolean("isGrayscaleTheme", false))
+    var isGrayscaleTheme: Boolean
+        get() = _isGrayscaleTheme
+        set(value) {
+            _isGrayscaleTheme = value
+            settingsRepository.putBoolean("isGrayscaleTheme", value)
+        }
+
+    private var _isReorderingEnabled by mutableStateOf(settingsRepository.getBoolean("isReorderingEnabled", false))
+    var isReorderingEnabled: Boolean
+        get() = _isReorderingEnabled
+        set(value) {
+            _isReorderingEnabled = value
+            settingsRepository.putBoolean("isReorderingEnabled", value)
+        }
+
     var lastMovedIndex by mutableStateOf(-1)
 
-    var isAlwaysOnTop by mutableStateOf(false)
+    private var _isAlwaysOnTop by mutableStateOf(settingsRepository.getBoolean("isAlwaysOnTop", false))
+    var isAlwaysOnTop: Boolean
+        get() = _isAlwaysOnTop
+        set(value) {
+            _isAlwaysOnTop = value
+            settingsRepository.putBoolean("isAlwaysOnTop", value)
+        }
 
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
@@ -52,6 +101,15 @@ class MusicPlayerViewModel(
 
     init {
         loadSubfolders()
+
+        // Initial state for always on top
+        if (isAlwaysOnTop && platformActions.isAlwaysOnTopPermissionGranted()) {
+            platformActions.setAlwaysOnTop(true)
+        } else if (isAlwaysOnTop) {
+            // Permission might have been revoked
+            isAlwaysOnTop = false
+        }
+
         scope.launch {
             p1IsPlaying.collect { isPlaying ->
                 if (isPlaying && isAutoplayEnabled && !isCurrentlyAutomixing) {

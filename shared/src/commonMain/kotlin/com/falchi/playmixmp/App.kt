@@ -24,7 +24,7 @@ import kotlin.time.Clock
 @Composable
 fun App(viewModel: MusicPlayerViewModel) {
     var isLocked by remember { mutableStateOf(false) }
-    var showAboutPage by remember { mutableStateOf(false) }
+    var showSettingsPage by remember { mutableStateOf(false) }
 
     AppTheme(isGrayscale = viewModel.isGrayscaleTheme) {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -72,11 +72,11 @@ fun App(viewModel: MusicPlayerViewModel) {
                         }
                     )
                     NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                        label = { Text("About") },
+                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                        label = { Text("Settings") },
                         selected = false,
                         onClick = {
-                            showAboutPage = true
+                            showSettingsPage = true
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -142,8 +142,8 @@ fun App(viewModel: MusicPlayerViewModel) {
                         LockOverlay(onUnlock = { isLocked = false })
                     }
 
-                    if (showAboutPage) {
-                        AboutPage(viewModel, onDismiss = { showAboutPage = false })
+                    if (showSettingsPage) {
+                        SettingsPage(viewModel, onDismiss = { showSettingsPage = false })
                     }
                 }
             }
@@ -152,7 +152,7 @@ fun App(viewModel: MusicPlayerViewModel) {
 }
 
 @Composable
-fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
+fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -161,33 +161,15 @@ fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
             modifier = Modifier.padding(32.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("About", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Text("Settings", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(24.dp))
             
             // Settings section
             Column(modifier = Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = viewModel.showCuePoints, onCheckedChange = { viewModel.showCuePoints = it })
-                    Text("Show Cue Points")
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = viewModel.isGrayscaleTheme, onCheckedChange = { viewModel.isGrayscaleTheme = it })
-                    Text("Black & White Theme")
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = viewModel.isReorderingEnabled, onCheckedChange = { viewModel.isReorderingEnabled = it })
-                    Text("Enable Reordering")
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = viewModel.isAlwaysOnTop,
-                        onCheckedChange = { viewModel.toggleAlwaysOnTop(it) }
-                    )
-                    Text("Always on Top (Foreground)")
-                }
+                SettingSwitchRow("Show Cue Points", viewModel.showCuePoints) { viewModel.showCuePoints = it }
+                SettingSwitchRow("Black & White Theme", viewModel.isGrayscaleTheme) { viewModel.isGrayscaleTheme = it }
+                SettingSwitchRow("Enable Reordering", viewModel.isReorderingEnabled) { viewModel.isReorderingEnabled = it }
+                SettingSwitchRow("Always on Top (Foreground)", viewModel.isAlwaysOnTop) { viewModel.toggleAlwaysOnTop(it) }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
@@ -227,6 +209,18 @@ fun AboutPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
 
             Spacer(modifier = Modifier.weight(1f))
         }
+    }
+}
+
+@Composable
+fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

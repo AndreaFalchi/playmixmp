@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 
@@ -21,6 +22,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var viewModel: MusicPlayerViewModel
     private lateinit var player1: AndroidAudioPlayer
     private lateinit var player2: AndroidAudioPlayer
+
+    private val sharedPrefs by lazy { getSharedPreferences("playmixmp_settings", MODE_PRIVATE) }
+
+    private val settingsRepository = object : SettingsRepository {
+        override fun getBoolean(key: String, defaultValue: Boolean): Boolean = sharedPrefs.getBoolean(key, defaultValue)
+        override fun putBoolean(key: String, value: Boolean) = sharedPrefs.edit { putBoolean(key, value) }
+        override fun getLong(key: String, defaultValue: Long): Long = sharedPrefs.getLong(key, defaultValue)
+        override fun putLong(key: String, value: Long) = sharedPrefs.edit { putLong(key, value) }
+        override fun getString(key: String, defaultValue: String): String = sharedPrefs.getString(key, defaultValue) ?: defaultValue
+        override fun putString(key: String, value: String) = sharedPrefs.edit { putString(key, value) }
+    }
 
     private val platformActions = object : PlatformActions {
         override fun setAlwaysOnTop(enabled: Boolean) {
@@ -46,9 +58,7 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                viewModel.loadMusic()
-            } else {
+            if (!isGranted) {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
             }
         }
@@ -86,7 +96,7 @@ class MainActivity : ComponentActivity() {
         player2 = AndroidAudioPlayer(this)
         val mediaLibrary = AndroidMediaLibrary(this)
         val nmlParser = AndroidNmlParser()
-        viewModel = MusicPlayerViewModel(player1, player2, mediaLibrary, nmlParser, platformActions, lifecycleScope)
+        viewModel = MusicPlayerViewModel(player1, player2, mediaLibrary, nmlParser, platformActions, settingsRepository, lifecycleScope)
 
         viewModel.onPickFolder = { pickFolder() }
         viewModel.onPickTraktorFile = { pickTraktorFile() }
@@ -105,9 +115,7 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
 
-        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-            viewModel.loadMusic()
-        } else {
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(permission)
         }
     }
