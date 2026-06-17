@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,15 +195,41 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
             Text("About this app", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Playm1xMP is an audio player desgined for simple and effective mixing and can manage playlists create in Traktor.",
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                text = buildAnnotatedString {
+                    append(
+                        "Playm1xMP is an audio player designed for simple and effective mixing and can manage playlists created in Traktor.\n" +
+                        "    Core Playback &amp; Loading:\n" +
+                        "    Load audio MP3 files (MP3, from a single folder within your device's 'Downloads' directory.\n" +
+                        "    Songs are automatically loaded in a random order each time you select a folder.\n" +
+                        "    Play the loaded songs with several mixing options:\n" +
+                        "    Automix: Manually trigger a crossfade (5, 10, or 15 seconds) to the next song when needed.\n" +
+                        "    Autoplay with Auto-Trigger:Enable automatic playback to the next song. You can set the trigger point from 1 to 60 seconds before the current song ends via the Settings.\n" +
+                        "    Dynamically move and reorder songs in the playlist, even while a song is playing, to instantly change the upcoming track for automix.\n" +
+                        "    Traktor Playlist Integration:\n" +
+                        "    Load Traktor playlists (.nml files) to organize and play your MP3 files according to your Traktor setup.\n" +
+                        "    If enabled in Settings, the app will attempt to use cue points (like load or fade-in/out markers) defined in your Traktor playlist when starting a song.\n" +
+                        "    Playlist Management:\n" +
+                        "    In evolution: Save your current in-app playlist (including any manual reordering) back to a Traktor playlist format (.nml). This allows you to reload your customized order later or use it in Traktor itself.\n" +
+                        "    Thank you for using Playm1x!\n" +
+                        "\n"
+                    )
+
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Credits: Andrea Falchi 2026\n")
+                    }
+
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Version: ")
+                    }
+
+                    append(getPlatform().version)
+                },
+                modifier = Modifier
+                    .height(180.dp)
+                    .verticalScroll(rememberScrollState()),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Credits: Andrea Falchi 2026", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Version: ${getPlatform().version}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
             
