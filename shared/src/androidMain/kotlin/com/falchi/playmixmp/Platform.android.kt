@@ -10,7 +10,13 @@ class AndroidPlatform : Platform {
     override val version: String by lazy {
         try {
             val packageInfo = appContext.packageManager.getPackageInfo(appContext.packageName, 0)
-            packageInfo.versionName ?: "Unknown"
+            val buildNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            "${packageInfo.versionName} (Build $buildNumber)"
         } catch (_: Exception) {
             "Unknown"
         }
