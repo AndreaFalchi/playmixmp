@@ -3,6 +3,8 @@ package com.falchi.playmixmp
 import androidx.compose.runtime.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 class MusicPlayerViewModel(
     private val player1: AudioPlayer,
@@ -72,6 +74,14 @@ class MusicPlayerViewModel(
             settingsRepository.putBoolean("isReorderingEnabled", value)
         }
 
+    private var _isRandomOrderEnabled by mutableStateOf(settingsRepository.getBoolean("isRandomOrderEnabled", false))
+    var isRandomOrderEnabled: Boolean
+        get() = _isRandomOrderEnabled
+        set(value) {
+            _isRandomOrderEnabled = value
+            settingsRepository.putBoolean("isRandomOrderEnabled", value)
+        }
+
     var lastMovedIndex by mutableStateOf(-1)
 
     private var _isAlwaysOnTop by mutableStateOf(settingsRepository.getBoolean("isAlwaysOnTop", false))
@@ -133,19 +143,21 @@ class MusicPlayerViewModel(
                 initiateAutomix()
                 break
             }
-            delay(1000)
+            delay(1.seconds)
         }
     }
 
     fun loadMusic() {
         scope.launch {
-            songList = mediaLibrary.getSongsFromDownloads()
+            val list = mediaLibrary.getSongsFromDownloads()
+            songList = if (isRandomOrderEnabled) list.shuffled() else list
         }
     }
 
     fun loadFromFolder(path: String) {
         scope.launch {
-            songList = mediaLibrary.getSongsFromFolder(path)
+            val list = mediaLibrary.getSongsFromFolder(path)
+            songList = if (isRandomOrderEnabled) list.shuffled() else list
             primaryPlayer.value.stop()
             currentPlayingSongIndex = -1
         }
@@ -183,8 +195,8 @@ class MusicPlayerViewModel(
                         val keyFileNameMatch = songFileName != null && cleanKey.lowercase() == songFileName
                         
                         val titleArtistMatch = trackInfo != null && 
-                                               song.title.lowercase() == trackInfo.title?.lowercase() && 
-                                               song.artist.lowercase() == trackInfo.artist?.lowercase()
+                                               song.title.equals(trackInfo.title, ignoreCase = true) && 
+                                               song.artist.equals(trackInfo.artist, ignoreCase = true)
                         
                         fileNameMatch || keyFileNameMatch || titleArtistMatch
                     }
@@ -273,8 +285,8 @@ class MusicPlayerViewModel(
         // Update currentPlayingSongIndex to track the same song
         val newPlayingIndex = when {
             currentPlayingSongIndex == fromIndex -> toIndex
-            fromIndex < currentPlayingSongIndex && toIndex >= currentPlayingSongIndex -> currentPlayingSongIndex - 1
-            fromIndex > currentPlayingSongIndex && toIndex <= currentPlayingSongIndex -> currentPlayingSongIndex + 1
+            currentPlayingSongIndex in fromIndex..toIndex -> currentPlayingSongIndex - 1
+            currentPlayingSongIndex in toIndex..fromIndex -> currentPlayingSongIndex + 1
             else -> currentPlayingSongIndex
         }
         
@@ -317,7 +329,7 @@ class MusicPlayerViewModel(
                 val fraction = i.toFloat() / steps
                 outgoingPlayer.setVolume(1.0f - fraction)
                 incomingPlayer.setVolume(fraction)
-                delay(stepDuration)
+                delay(stepDuration.milliseconds)
             }
             
             outgoingPlayer.stop()

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.withStyle
 fun App(viewModel: MusicPlayerViewModel) {
     var isLocked by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
+    var showAboutPage by remember { mutableStateOf(false) }
 
     AppTheme(isGrayscale = viewModel.isGrayscaleTheme) {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -97,11 +98,11 @@ fun App(viewModel: MusicPlayerViewModel) {
                         }
                     )
                     NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                        label = { Text("Lock Screen") },
+                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                        label = { Text("About") },
                         selected = false,
                         onClick = {
-                            isLocked = true
+                            showAboutPage = true
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -161,6 +162,10 @@ fun App(viewModel: MusicPlayerViewModel) {
                     if (showSettingsPage) {
                         SettingsPage(viewModel, onDismiss = { showSettingsPage = false })
                     }
+
+                    if (showAboutPage) {
+                        AboutPage(onDismiss = { showAboutPage = false })
+                    }
                 }
             }
         }
@@ -182,6 +187,7 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
             
             // Settings section
             Column(modifier = Modifier.fillMaxWidth()) {
+                SettingSwitchRow("Randomize on Load", viewModel.isRandomOrderEnabled) { viewModel.isRandomOrderEnabled = it }
                 SettingSwitchRow("Show Cue Points", viewModel.showCuePoints) { viewModel.showCuePoints = it }
                 SettingSwitchRow("Black & White Theme", viewModel.isGrayscaleTheme) { viewModel.isGrayscaleTheme = it }
                 SettingSwitchRow("Enable Reordering", viewModel.isReorderingEnabled) { viewModel.isReorderingEnabled = it }
@@ -200,10 +206,29 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(24.dp))
+            
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("Back")
+            }
+        }
+    }
+}
 
-            // About section
+@Composable
+fun AboutPage(onDismiss: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(start = 32.dp, end = 32.dp, top = 48.dp, bottom = 56.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("About", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(24.dp))
+            
             Text(
                 text = buildAnnotatedString {
 
@@ -249,22 +274,17 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                     }
                 },
                 modifier = Modifier
-                    .height(204.dp)
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
                 textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.bodyMedium
             )
-
-
-
 
             Spacer(modifier = Modifier.height(24.dp))
             
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text("Back")
             }
-
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
