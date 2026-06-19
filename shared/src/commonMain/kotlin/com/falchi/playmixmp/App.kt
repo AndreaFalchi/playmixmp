@@ -38,8 +38,13 @@ fun App(viewModel: MusicPlayerViewModel) {
             drawerState = drawerState,
             drawerContent = {
                 ModalDrawerSheet {
+                    // Parte superiore fissa
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("PlayM1X Menu", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "PlayM1X Menu",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.titleLarge
+                    )
                     HorizontalDivider()
 
                     NavigationDrawerItem(
@@ -52,19 +57,26 @@ fun App(viewModel: MusicPlayerViewModel) {
                         }
                     )
 
-                    // Dynamic subfolder entries
-                    viewModel.subfolders.forEach { (name, path) ->
-                        NavigationDrawerItem(
-                            icon = { Icon(Icons.Default.Folder, contentDescription = null) },
-                            label = { Text(name) },
-                            selected = false,
-                            onClick = {
-                                viewModel.loadFromFolder(path)
-                                scope.launch { drawerState.close() }
-                            }
-                        )
+                    // Parte centrale scorrevole (Cartelle)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        viewModel.subfolders.forEach { (name, path) ->
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.Folder, contentDescription = null) },
+                                label = { Text(name) },
+                                selected = false,
+                                onClick = {
+                                    viewModel.loadFromFolder(path)
+                                    scope.launch { drawerState.close() }
+                                }
+                            )
+                        }
                     }
 
+                    // Parte inferiore fissa
                     HorizontalDivider()
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.UploadFile, contentDescription = null) },
