@@ -48,8 +48,9 @@ class AndroidNmlParser : NmlParser {
                         val name = parser.getAttributeValue(null, "NAME")
                         val start = parser.getAttributeValue(null, "START")?.toDoubleOrNull()
                         val hotcue = parser.getAttributeValue(null, "HOTCUE")?.toIntOrNull() ?: -1
+                        val type = parser.getAttributeValue(null, "TYPE")?.toIntOrNull() ?: 0
                         if (start != null) {
-                            currentCuePoints.add(TraktorCuePoint(name ?: "Cue", start.toLong(), hotcue))
+                            currentCuePoints.add(TraktorCuePoint(name ?: "Cue", start.toLong(), hotcue, type))
                         }
                     }
                     "PRIMARYKEY" -> {

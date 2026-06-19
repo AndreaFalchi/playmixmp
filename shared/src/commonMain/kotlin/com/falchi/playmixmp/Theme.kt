@@ -14,6 +14,12 @@ val ColorTraktorDefault = Color(0xFFEF4444) // Rosso corallo
 val ColorCuePointDefault = Color(0xFFF59E0B) // Ambra
 val ColorMovingDefault = Color(0xFFFACC15)   // Giallo brillante: Canzone che viene spostata
 
+// Colori specifici per tipo di Cue Traktor
+val ColorTraktorFade = Color(0xFFF59E0B)  // Arancione
+val ColorTraktorLoop = Color(0xFF10B981) // Verde
+val ColorTraktorLoad = Color(0xFFFACC15) // Giallo
+val ColorTraktorCue = Color(0xFF3B82F6) // Blu
+
 // --- COLORI DELLO STATO DELLA RIPRODUZIONE (GRAYSCALE) ---
 val ColorPlayingGrayscale = Color(0xFFFFFFFF) // Bianco
 val ColorPausedGrayscale = Color(0xFFBDBDBD)  // Grigio chiaro
@@ -59,6 +65,19 @@ private val GrayscaleLightColorScheme = lightColorScheme(
     surface = Color(0xFFFFFFFF),
     background = Color(0xFFF5F5F5)
 )
+
+// 0: Cue, 1: Fade-In, 2: Fade-Out, 3: Load, 4: Grid, 5: Loop
+@Composable
+fun getCueColor(type: Int, isGrayscale: Boolean): Color {
+    if (isGrayscale) return ColorCuePointGrayscale
+    return when (type) {
+        0 -> ColorTraktorCue
+        1, 2 -> ColorTraktorFade
+        3 -> ColorTraktorLoad
+        5 -> ColorTraktorLoop
+        else -> ColorTraktorCue
+    }
+}
 
 @Composable
 fun AppTheme(

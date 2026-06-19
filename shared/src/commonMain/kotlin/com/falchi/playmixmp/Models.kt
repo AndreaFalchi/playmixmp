@@ -16,7 +16,8 @@ data class SongProgress(
 data class TraktorCuePoint(
     val name: String,
     val startTimeMs: Long,
-    val hotcueIndex: Int = -1
+    val hotcueIndex: Int = -1,
+    val type: Int = 0 // 0: Cue, 1: Fade-In, 2: Fade-Out, 3: Load, 4: Grid, 5: Loop
 )
 
 data class Song(

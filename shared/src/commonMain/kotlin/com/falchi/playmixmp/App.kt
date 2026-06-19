@@ -473,31 +473,37 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
         }
 
         if (viewModel.showCuePoints && currentSong != null && currentSong.traktorCuePoints.any { it.hotcueIndex != -1 }) {
+            val cues = currentSong.traktorCuePoints
+                .filter { it.hotcueIndex != -1 }
+                .sortedBy { it.hotcueIndex }
+            val cueCount = cues.size
+            
+            // Riduciamo la dimensione se ci sono più di 6 cue per farli stare su una riga
+            val size = if (cueCount > 6) 38.dp else 48.dp
+            val spacing = if (cueCount > 6) 4.dp else 12.dp
+
             Row(
-                modifier = Modifier.padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)
             ) {
-                currentSong.traktorCuePoints
-                    .filter { it.hotcueIndex != -1 }
-                    .sortedBy { it.hotcueIndex }
-                    .forEach { cue ->
-                        Surface(
-                            color = ColorCuePoint,
-                            shape = MaterialTheme.shapes.extraSmall,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clickable { viewModel.jumpToCue(cue) }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = cue.hotcueIndex.toString(),
-                                    color = Color.Black,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                cues.forEach { cue ->
+                    Surface(
+                        color = getCueColor(cue.type, viewModel.isGrayscaleTheme),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        modifier = Modifier
+                            .size(size)
+                            .clickable { viewModel.jumpToCue(cue) }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = cue.hotcueIndex.toString(),
+                                color = Color.Black,
+                                style = if (cueCount > 6) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
+                }
             }
         }
 
