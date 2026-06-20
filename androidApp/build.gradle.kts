@@ -28,8 +28,8 @@ android {
         applicationId = "com.falchi.playmixmp"
         minSdk = project.property("android.minSdk").toString().toInt()
         targetSdk = project.property("android.targetSdk").toString().toInt()
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = 1
+        versionName = "1.1"
     }
     packaging {
         resources {
