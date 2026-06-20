@@ -22,12 +22,12 @@ dependencies {
 
 android {
     namespace = "com.falchi.playmixmp"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = project.property("android.compileSdk").toString().toInt()
 
     defaultConfig {
         applicationId = "com.falchi.playmixmp"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk = project.property("android.minSdk").toString().toInt()
+        targetSdk = project.property("android.targetSdk").toString().toInt()
         versionCode = 2
         versionName = "1.0"
     }
