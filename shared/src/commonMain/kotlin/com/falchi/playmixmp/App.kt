@@ -30,6 +30,7 @@ fun App(viewModel: MusicPlayerViewModel) {
     var isLocked by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
     var showAboutPage by remember { mutableStateOf(false) }
+    var showLogViewer by remember { mutableStateOf(false) }
 
     AppTheme(isGrayscale = viewModel.isGrayscaleTheme) {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -166,6 +167,10 @@ fun App(viewModel: MusicPlayerViewModel) {
                     if (showAboutPage) {
                         AboutPage(onDismiss = { showAboutPage = false })
                     }
+
+                    if (showLogViewer) {
+                        LogViewerDialog(viewModel, onDismiss = { showLogViewer = false })
+                    }
                 }
             }
         }
@@ -174,6 +179,8 @@ fun App(viewModel: MusicPlayerViewModel) {
 
 @Composable
 fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
+    var showLogViewer by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -192,7 +199,20 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                 SettingSwitchRow("Black & White Theme", viewModel.isGrayscaleTheme) { viewModel.isGrayscaleTheme = it }
                 SettingSwitchRow("Enable Reordering", viewModel.isReorderingEnabled) { viewModel.isReorderingEnabled = it }
                 SettingSwitchRow("Always on Top (Foreground)", viewModel.isAlwaysOnTop) { viewModel.toggleAlwaysOnTop(it) }
+                SettingSwitchRow("Enable Logging", viewModel.isLoggingEnabled) { viewModel.isLoggingEnabled = it }
                 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { showLogViewer = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Icon(Icons.Default.BugReport, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("View Logs")
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text("Automix Lead Time: ${viewModel.automixLeadTimeMs / 1000}s", style = MaterialTheme.typography.titleMedium)
@@ -211,6 +231,10 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                 Text("Back")
             }
         }
+    }
+
+    if (showLogViewer) {
+        LogViewerDialog(viewModel, onDismiss = { showLogViewer = false })
     }
 }
 

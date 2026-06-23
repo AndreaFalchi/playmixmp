@@ -92,6 +92,15 @@ class MusicPlayerViewModel(
             settingsRepository.putBoolean("isAlwaysOnTop", value)
         }
 
+    private var _isLoggingEnabled by mutableStateOf(settingsRepository.getBoolean("isLoggingEnabled", true))
+    var isLoggingEnabled: Boolean
+        get() = _isLoggingEnabled
+        set(value) {
+            _isLoggingEnabled = value
+            settingsRepository.putBoolean("isLoggingEnabled", value)
+            Logger.isEnabled = value
+        }
+
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
     var onPickTraktorFile: (() -> Unit)? = null
@@ -111,6 +120,8 @@ class MusicPlayerViewModel(
 
     init {
         loadSubfolders()
+        Logger.isEnabled = isLoggingEnabled
+        Logger.i("MusicPlayerViewModel initialized")
 
         // Initial state for always on top
         if (isAlwaysOnTop && platformActions.isAlwaysOnTopPermissionGranted()) {
@@ -148,26 +159,41 @@ class MusicPlayerViewModel(
     }
 
     fun loadMusic() {
+        Logger.i("loadMusic() started. Current songList size: ${songList.size}")
         scope.launch {
-            val list = mediaLibrary.getSongsFromDownloads()
-            songList = if (isRandomOrderEnabled) list.shuffled() else list
+            try {
+                val list = mediaLibrary.getSongsFromDownloads()
+                Logger.i("loadMusic() MediaLibrary returned ${list.size} songs")
+                songList = if (isRandomOrderEnabled) list.shuffled() else list
+                Logger.i("loadMusic() completed. New songList size: ${songList.size}")
+            } catch (e: Exception) {
+                Logger.e("Error in loadMusic()", e)
+            }
         }
     }
 
     fun loadFromFolder(path: String) {
+        Logger.i("loadFromFolder() started for path: $path. Current songList size: ${songList.size}")
         scope.launch {
-            val list = mediaLibrary.getSongsFromFolder(path)
-            songList = if (isRandomOrderEnabled) list.shuffled() else list
-            primaryPlayer.value.stop()
-            currentPlayingSongIndex = -1
+            try {
+                val list = mediaLibrary.getSongsFromFolder(path)
+                Logger.i("loadFromFolder() MediaLibrary returned ${list.size} songs")
+                songList = if (isRandomOrderEnabled) list.shuffled() else list
+                primaryPlayer.value.stop()
+                currentPlayingSongIndex = -1
+                Logger.i("loadFromFolder() completed. New songList size: ${songList.size}")
+            } catch (e: Exception) {
+                Logger.e("Error in loadFromFolder()", e)
+            }
         }
     }
 
     fun loadTraktorFile(xmlData: String) {
+        Logger.i("loadTraktorFile() started. Data size: ${xmlData.length}. Current songList size: ${songList.size}")
         scope.launch {
             try {
                 val (collection, playlistKeys) = nmlParser.parse(xmlData)
-                println("TraktorParser: Found ${collection.size} tracks in collection and ${playlistKeys.size} in playlist")
+                Logger.i("TraktorParser: Found ${collection.size} tracks in collection and ${playlistKeys.size} in playlist")
                 
                 // Pre-process collection keys for faster matching
                 // Traktor keys are often full paths, we want the filename part
@@ -214,30 +240,39 @@ class MusicPlayerViewModel(
                     )
                 }
                 
-                println("TraktorParser: Successfully matched ${newSongs.size} out of ${playlistKeys.size} songs")
+                Logger.i("TraktorParser: Successfully matched ${newSongs.size} out of ${playlistKeys.size} songs")
                 
                 if (newSongs.isNotEmpty()) {
                     songList = newSongs
                     primaryPlayer.value.stop()
                     currentPlayingSongIndex = -1
+                    Logger.i("loadTraktorFile() completed. New songList size: ${songList.size}")
                 } else {
-                    println("TraktorParser: No songs were matched. Keeping current list.")
+                    Logger.i("TraktorParser: No songs were matched. Keeping current list (size: ${songList.size})")
                 }
             } catch (e: Exception) {
-                println("TraktorParser: Error parsing or matching Traktor file: ${e.message}")
+                Logger.e("TraktorParser: Error parsing or matching Traktor file", e)
             }
         }
     }
 
     fun playNewSong(index: Int) {
-        if (index !in songList.indices) return
-        if (isCurrentlyAutomixing) return
+        if (index !in songList.indices) {
+            Logger.e("Cannot play song at index $index: out of bounds (size: ${songList.size})")
+            return
+        }
+        if (isCurrentlyAutomixing) {
+            Logger.i("Cannot play new song: automix in progress")
+            return
+        }
 
         if (index == currentPlayingSongIndex) {
+            Logger.i("Toggling play/pause for current song at index $index")
             togglePlayPause()
             return
         }
 
+        Logger.i("Playing new song: ${songList[index].title} (Index: $index)")
         currentPlayingSongIndex = index
         player2.stop()
         player1.stop()
@@ -309,8 +344,15 @@ class MusicPlayerViewModel(
         }
     }
 
+    fun shareLogs() {
+        platformActions.shareLogFile(Logger.getLogFilePath())
+    }
+
     private fun initiateAutomix() {
-        if (isCurrentlyAutomixing || currentPlayingSongIndex >= songList.size - 1) return
+        if (isCurrentlyAutomixing || currentPlayingSongIndex >= songList.size - 1) {
+            Logger.i("Automix aborted: isCurrentlyAutomixing=$isCurrentlyAutomixing, index=$currentPlayingSongIndex")
+            return
+        }
         
         isCurrentlyAutomixing = true
         val outgoingIndex = currentPlayingSongIndex
@@ -319,27 +361,36 @@ class MusicPlayerViewModel(
         val outgoingPlayer = _primaryPlayer.value
         val incomingPlayer = if (outgoingPlayer === player1) player2 else player1
 
+        Logger.i("Initiating automix: $outgoingIndex -> $incomingIndex")
+
         scope.launch {
-            val nextSong = songList[incomingIndex]
-            incomingPlayer.prepare(nextSong.contentUri, true, 0.0f)
-            
-            val steps = 20
-            val stepDuration = crossfadeDurationMs / steps
-            for (i in 1..steps) {
-                val fraction = i.toFloat() / steps
-                outgoingPlayer.setVolume(1.0f - fraction)
-                incomingPlayer.setVolume(fraction)
-                delay(stepDuration.milliseconds)
-            }
-            
-            outgoingPlayer.stop()
-            currentPlayingSongIndex = incomingIndex
-            _primaryPlayer.value = incomingPlayer
-            isCurrentlyAutomixing = false
-            
-            // If autoplay is still on, start monitoring next transition
-            if (isAutoplayEnabled) {
-                checkAutoplay()
+            try {
+                val nextSong = songList[incomingIndex]
+                Logger.i("Preparing incoming song: ${nextSong.title}")
+                incomingPlayer.prepare(nextSong.contentUri, true, 0.0f)
+                
+                val steps = 20
+                val stepDuration = crossfadeDurationMs / steps
+                for (i in 1..steps) {
+                    val fraction = i.toFloat() / steps
+                    outgoingPlayer.setVolume(1.0f - fraction)
+                    incomingPlayer.setVolume(fraction)
+                    delay(stepDuration.milliseconds)
+                }
+                
+                outgoingPlayer.stop()
+                currentPlayingSongIndex = incomingIndex
+                _primaryPlayer.value = incomingPlayer
+                isCurrentlyAutomixing = false
+                Logger.i("Automix completed. Now playing: ${songList[incomingIndex].title}")
+                
+                // If autoplay is still on, start monitoring next transition
+                if (isAutoplayEnabled) {
+                    checkAutoplay()
+                }
+            } catch (e: Exception) {
+                Logger.e("Error during automix", e)
+                isCurrentlyAutomixing = false
             }
         }
     }

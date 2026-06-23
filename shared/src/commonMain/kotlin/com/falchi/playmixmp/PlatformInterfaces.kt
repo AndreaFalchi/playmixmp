@@ -32,6 +32,7 @@ interface PlatformActions {
     fun setAlwaysOnTop(enabled: Boolean)
     fun isAlwaysOnTopPermissionGranted(): Boolean
     fun requestAlwaysOnTopPermission()
+    fun shareLogFile(filePath: String)
 }
 
 interface SettingsRepository {

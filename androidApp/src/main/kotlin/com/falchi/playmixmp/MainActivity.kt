@@ -13,9 +13,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     
@@ -27,11 +29,11 @@ class MainActivity : ComponentActivity() {
 
     private val settingsRepository = object : SettingsRepository {
         override fun getBoolean(key: String, defaultValue: Boolean): Boolean = sharedPrefs.getBoolean(key, defaultValue)
-        override fun putBoolean(key: String, value: Boolean) = sharedPrefs.edit { putBoolean(key, value) }
+        override fun putBoolean(key: String, value: Boolean) { sharedPrefs.edit { putBoolean(key, value) } }
         override fun getLong(key: String, defaultValue: Long): Long = sharedPrefs.getLong(key, defaultValue)
-        override fun putLong(key: String, value: Long) = sharedPrefs.edit { putLong(key, value) }
+        override fun putLong(key: String, value: Long) { sharedPrefs.edit { putLong(key, value) } }
         override fun getString(key: String, defaultValue: String): String = sharedPrefs.getString(key, defaultValue) ?: defaultValue
-        override fun putString(key: String, value: String) = sharedPrefs.edit { putString(key, value) }
+        override fun putString(key: String, value: String) { sharedPrefs.edit { putString(key, value) } }
     }
 
     private val platformActions = object : PlatformActions {
@@ -53,6 +55,27 @@ class MainActivity : ComponentActivity() {
                 "package:$packageName".toUri()
             )
             startActivity(intent)
+        }
+
+        override fun shareLogFile(filePath: String) {
+            val file = File(filePath)
+            if (!file.exists()) {
+                Toast.makeText(this@MainActivity, "Log file not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val uri = FileProvider.getUriForFile(
+                this@MainActivity,
+                "${packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Share Logs"))
         }
     }
 
@@ -89,6 +112,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Logger.i("MainActivity onCreate, savedInstanceState: ${savedInstanceState != null}")
 
         appContext = applicationContext
 
@@ -130,6 +154,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        Logger.i("MainActivity onResume. Playlist size: ${viewModel.songList.size}")
         // Update viewModel state if permission was granted while app was in background
         if (viewModel.isAlwaysOnTop && !platformActions.isAlwaysOnTopPermissionGranted()) {
             viewModel.isAlwaysOnTop = false
@@ -137,8 +162,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        Logger.i("MainActivity onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Logger.i("MainActivity onStop")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Logger.i("MainActivity onSaveInstanceState")
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        Logger.i("MainActivity onDestroy")
         player1.release()
         player2.release()
     }

@@ -73,6 +73,7 @@ class AndroidAudioPlayer(context: Context) : AudioPlayer {
     }
 
     override fun prepare(uri: String, playWhenReady: Boolean, volume: Float) {
+        Logger.i("Player preparing URI: $uri")
         exoPlayer.setMediaItem(MediaItem.fromUri(Uri.parse(uri)))
         exoPlayer.volume = volume
         exoPlayer.playWhenReady = playWhenReady
@@ -80,14 +81,17 @@ class AndroidAudioPlayer(context: Context) : AudioPlayer {
     }
 
     override fun play() {
+        Logger.i("Player play()")
         exoPlayer.play()
     }
 
     override fun pause() {
+        Logger.i("Player pause()")
         exoPlayer.pause()
     }
 
     override fun stop() {
+        Logger.i("Player stop()")
         exoPlayer.stop()
     }
 
