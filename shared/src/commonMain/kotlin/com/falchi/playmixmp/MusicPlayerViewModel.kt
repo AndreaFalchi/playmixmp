@@ -66,12 +66,12 @@ class MusicPlayerViewModel(
             settingsRepository.putBoolean("isGrayscaleTheme", value)
         }
 
-    private var _isReorderingEnabled by mutableStateOf(settingsRepository.getBoolean("isReorderingEnabled", false))
+    private var _isReorderingEnabled by mutableStateOf(false) // Always start disabled
     var isReorderingEnabled: Boolean
         get() = _isReorderingEnabled
         set(value) {
             _isReorderingEnabled = value
-            settingsRepository.putBoolean("isReorderingEnabled", value)
+            // Not saving to settings as it should reset on restart
         }
 
     private var _isRandomOrderEnabled by mutableStateOf(settingsRepository.getBoolean("isRandomOrderEnabled", false))

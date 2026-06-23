@@ -1,10 +1,15 @@
 package com.falchi.playmixmp
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.*
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.roundToInt
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -120,6 +125,13 @@ fun App(viewModel: MusicPlayerViewModel) {
                             }
                         },
                         actions = {
+                            IconButton(onClick = { viewModel.isReorderingEnabled = !viewModel.isReorderingEnabled }) {
+                                Icon(
+                                    Icons.Default.Build, 
+                                    contentDescription = "Toggle Reorder",
+                                    tint = if (viewModel.isReorderingEnabled) ColorMoving else MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                             IconButton(onClick = { isLocked = true }) {
                                 Icon(Icons.Default.Lock, contentDescription = "Lock")
                             }
@@ -357,6 +369,7 @@ fun now(): Long = Clock.System.now().toEpochMilliseconds()
 
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     val songs = viewModel.songList
     val currentIndex = viewModel.currentPlayingSongIndex
@@ -365,8 +378,81 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     val p1Duration by viewModel.p1Duration.collectAsState()
     val progress = if (p1Duration > 0) p1Position.toFloat() / p1Duration.toFloat() else 0f
 
-    Column(modifier = modifier) {
-        LazyColumn(modifier = Modifier.weight(1f)) {
+    var songToMoveToTop by remember { mutableStateOf<Pair<Int, Song>?>(null) }
+    val lazyListState = rememberLazyListState()
+    
+    // Drag and drop state
+    var draggedItemIndex by remember { mutableStateOf<Int?>(null) }
+    var draggingOffset by remember { mutableFloatStateOf(0f) }
+
+    if (songToMoveToTop != null) {
+        AlertDialog(
+            onDismissRequest = { songToMoveToTop = null },
+            title = { Text("Porta in cima") },
+            text = { Text("Vuoi spostare '${songToMoveToTop?.second?.title}' al primo posto della playlist?") },
+            confirmButton = {
+                Button(onClick = {
+                    songToMoveToTop?.first?.let { viewModel.moveSong(it, 0) }
+                    songToMoveToTop = null
+                }) {
+                    Text("Conferma")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { songToMoveToTop = null }) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    Column(modifier = modifier.background(
+        if (viewModel.isReorderingEnabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) 
+        else Color.Transparent
+    )) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier
+                .weight(1f)
+                .pointerInput(viewModel.isReorderingEnabled) {
+                    if (!viewModel.isReorderingEnabled) return@pointerInput
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { offset ->
+                            lazyListState.layoutInfo.visibleItemsInfo
+                                .firstOrNull { item -> offset.y.roundToInt() in item.offset..(item.offset + item.size) }
+                                ?.let { draggedItemIndex = it.index }
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            draggingOffset += dragAmount.y
+                            
+                            val currentDraggedIndex = draggedItemIndex ?: return@detectDragGesturesAfterLongPress
+                            
+                            val draggedItemInfo = lazyListState.layoutInfo.visibleItemsInfo
+                                .firstOrNull { it.index == currentDraggedIndex } ?: return@detectDragGesturesAfterLongPress
+                            
+                            val targetItem = lazyListState.layoutInfo.visibleItemsInfo
+                                .firstOrNull { item -> 
+                                    (draggedItemInfo.offset + draggingOffset).roundToInt() in item.offset..(item.offset + item.size) 
+                                }
+
+                            if (targetItem != null && targetItem.index != currentDraggedIndex) {
+                                viewModel.moveSong(currentDraggedIndex, targetItem.index)
+                                draggedItemIndex = targetItem.index
+                                draggingOffset = 0f
+                            }
+                        },
+                        onDragEnd = {
+                            draggedItemIndex = null
+                            draggingOffset = 0f
+                        },
+                        onDragCancel = {
+                            draggedItemIndex = null
+                            draggingOffset = 0f
+                        }
+                    )
+                }
+        ) {
             itemsIndexed(songs) { index, song ->
                 SongItem(
                     index = index,
@@ -375,10 +461,18 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                     isPlaying = index == currentIndex && p1IsPlaying,
                     progress = progress,
                     isReorderEnabled = viewModel.isReorderingEnabled,
-                    isMoved = index == viewModel.lastMovedIndex,
-                    onMoveUp = { if (index > 0) viewModel.moveSong(index, index - 1) },
-                    onMoveDown = { if (index < songs.size - 1) viewModel.moveSong(index, index + 1) },
-                    onClick = { viewModel.playNewSong(index) }
+                    isMoved = index == viewModel.lastMovedIndex || index == draggedItemIndex,
+                    onClick = {
+                        if (!viewModel.isReorderingEnabled) {
+                            viewModel.playNewSong(index)
+                        }
+                    },
+                    onDoubleClick = {
+                        if (viewModel.isReorderingEnabled) {
+                            songToMoveToTop = index to song
+                        }
+                    },
+                    modifier = if (index == draggedItemIndex) Modifier.graphicsLayer { translationY = draggingOffset } else Modifier
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = ColorDivider)
             }
@@ -409,6 +503,7 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SongItem(
     index: Int,
@@ -418,9 +513,9 @@ fun SongItem(
     progress: Float,
     isReorderEnabled: Boolean,
     isMoved: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
-    onClick: () -> Unit
+    onDoubleClick: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val titleColor = when {
         isActive && isPlaying -> ColorPlaying
@@ -432,7 +527,7 @@ fun SongItem(
     val backgroundColor = if (isReorderEnabled && isMoved) ColorMoving.copy(alpha = 0.2f) else Color.Transparent
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp, horizontal = 4.dp),
         shape = MaterialTheme.shapes.small,
@@ -442,7 +537,10 @@ fun SongItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .combinedClickable(
+                    onClick = onClick,
+                    onDoubleClick = onDoubleClick
+                )
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -495,22 +593,12 @@ fun SongItem(
             }
 
             if (isReorderEnabled) {
-                Row(
-                    modifier = Modifier.padding(start = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onMoveUp) {
-                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move Up")
-                    }
-                    Icon(
-                        Icons.Default.DragHandle, 
-                        contentDescription = "Reorder",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    IconButton(onClick = onMoveDown) {
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move Down")
-                    }
-                }
+                Icon(
+                    Icons.Default.DragHandle, 
+                    contentDescription = "Reorder",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
             }
         }
     }
