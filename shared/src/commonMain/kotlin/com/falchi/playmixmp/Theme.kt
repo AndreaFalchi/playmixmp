@@ -9,8 +9,8 @@ import androidx.compose.ui.graphics.Color
 
 // --- COLORI DELLO STATO DELLA RIPRODUZIONE (COLORATI) ---
 val ColorPlayingDefault = Color(0xFF10B981) // Verde smeraldo
-val ColorPausedDefault = Color(0xFF3B82F6)  // Blu moderno
-val ColorTraktorDefault = Color(0xFFEF4444) // Rosso corallo
+val ColorPausedDefault = Color(0xFFEF4444)  // Rosso corallo
+val ColorTraktorDefault = Color(0xFF3B82F6) // Blu moderno
 val ColorCuePointDefault = Color(0xFFF59E0B) // Ambra
 val ColorMovingDefault = Color(0xFFFACC15)   // Giallo brillante: Canzone che viene spostata
 
