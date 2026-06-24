@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.roundToInt
@@ -619,12 +620,45 @@ fun PlayerControls(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
         )
 
         if (duration > 0) {
-            Slider(
-                value = position.toFloat(),
-                onValueChange = { viewModel.seekTo(it.toLong()) },
-                valueRange = 0f..duration.toFloat(),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Slider(
+                    value = position.toFloat(),
+                    onValueChange = { viewModel.seekTo(it.toLong()) },
+                    valueRange = 0f..duration.toFloat(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        activeTickColor = Color.Transparent,
+                        inactiveTickColor = Color.Transparent
+                    )
+                )
+
+                // Track markers for Cues (Drawn ON TOP of the Slider)
+                if (currentSong != null && currentSong.traktorCuePoints.isNotEmpty()) {
+                    val isGrayscale = viewModel.isGrayscaleTheme
+                    Canvas(modifier = Modifier.fillMaxWidth().height(12.dp)) { // Slightly shorter to not cover the whole thumb
+                        val sliderWidth = size.width
+                        val trackPadding = 10.dp.toPx()
+                        val usableWidth = sliderWidth - (trackPadding * 2)
+                        
+                        currentSong.traktorCuePoints.forEach { cue ->
+                            val x = trackPadding + (cue.startTimeMs.toFloat() / duration) * usableWidth
+                            val color = if (isGrayscale) ColorCuePointGrayscale else when (cue.type) {
+                                0 -> ColorTraktorCue
+                                1, 2 -> ColorTraktorFade
+                                3 -> ColorTraktorLoad
+                                5 -> ColorTraktorLoop
+                                else -> ColorTraktorCue
+                            }
+                            drawLine(
+                                color = color,
+                                start = Offset(x, 0f),
+                                end = Offset(x, size.height),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                        }
+                    }
+                }
+            }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatDuration(position), style = MaterialTheme.typography.labelSmall)
                 Text("-${formatDuration(duration - position)}", style = MaterialTheme.typography.labelSmall)
