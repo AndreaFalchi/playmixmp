@@ -101,6 +101,14 @@ class MusicPlayerViewModel(
             Logger.isEnabled = value
         }
 
+    private var _isDoubleClickToPlayEnabled by mutableStateOf(settingsRepository.getBoolean("isDoubleClickToPlayEnabled", true))
+    var isDoubleClickToPlayEnabled: Boolean
+        get() = _isDoubleClickToPlayEnabled
+        set(value) {
+            _isDoubleClickToPlayEnabled = value
+            settingsRepository.putBoolean("isDoubleClickToPlayEnabled", value)
+        }
+
     // Callbacks for UI
     var onPickFolder: (() -> Unit)? = null
     var onPickTraktorFile: (() -> Unit)? = null

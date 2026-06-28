@@ -211,6 +211,7 @@ fun SettingsPage(viewModel: MusicPlayerViewModel, onDismiss: () -> Unit) {
                 SettingSwitchRow("Show Cue Points", viewModel.showCuePoints) { viewModel.showCuePoints = it }
                 SettingSwitchRow("Black & White Theme", viewModel.isGrayscaleTheme) { viewModel.isGrayscaleTheme = it }
                 SettingSwitchRow("Enable Reordering", viewModel.isReorderingEnabled) { viewModel.isReorderingEnabled = it }
+                SettingSwitchRow("Double Click to Play", viewModel.isDoubleClickToPlayEnabled) { viewModel.isDoubleClickToPlayEnabled = it }
                 SettingSwitchRow("Always on Top (Foreground)", viewModel.isAlwaysOnTop) { viewModel.toggleAlwaysOnTop(it) }
                 SettingSwitchRow("Enable Logging", viewModel.isLoggingEnabled) { viewModel.isLoggingEnabled = it }
                 
@@ -464,13 +465,15 @@ fun SongList(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
                     isReorderEnabled = viewModel.isReorderingEnabled,
                     isMoved = index == viewModel.lastMovedIndex || index == draggedItemIndex,
                     onClick = {
-                        if (!viewModel.isReorderingEnabled) {
+                        if (!viewModel.isReorderingEnabled && !viewModel.isDoubleClickToPlayEnabled) {
                             viewModel.playNewSong(index)
                         }
                     },
                     onDoubleClick = {
                         if (viewModel.isReorderingEnabled) {
                             songToMoveToTop = index to song
+                        } else if (viewModel.isDoubleClickToPlayEnabled) {
+                            viewModel.playNewSong(index)
                         }
                     },
                     modifier = if (index == draggedItemIndex) Modifier.graphicsLayer { translationY = draggingOffset } else Modifier
