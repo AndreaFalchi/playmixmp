@@ -2,6 +2,8 @@ package com.falchi.playmixmp
 
 import android.content.Context
 import android.net.Uri
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -14,7 +16,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AndroidAudioPlayer(context: Context) : AudioPlayer {
-    private val exoPlayer = ExoPlayer.Builder(context).build()
+    private val exoPlayer = ExoPlayer.Builder(context)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                .setUsage(C.USAGE_MEDIA)
+                .build(),
+            false // DISABILITATO: Permette la riproduzione simultanea per l'Automix e ignora le interruzioni (chiamate/notifiche)
+        )
+        .setHandleAudioBecomingNoisy(false) // DISABILITATO: La musica NON si ferma se scolleghi le cuffie
+        .setWakeMode(C.WAKE_MODE_LOCAL) // Mantiene attiva la CPU durante la riproduzione
+        .build()
     
     private val _playbackState = MutableStateFlow(PlaybackState.NONE)
     override val playbackState = _playbackState.asStateFlow()
