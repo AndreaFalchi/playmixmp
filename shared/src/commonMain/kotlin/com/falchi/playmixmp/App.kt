@@ -308,8 +308,19 @@ fun AboutPage(onDismiss: () -> Unit) {
                     }
 
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                        append("Version: ${getPlatform().version}")
+                        append("Version: ${BuildInfo.APP_VERSION_NAME} (Build ${BuildInfo.APP_VERSION_CODE})\n")
                     }
+                    append("Platform: ${getPlatform().name} ${getPlatform().version}\n")
+                    append("\n")
+
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Build Environment:\n")
+                    }
+                    append("• Kotlin: ${BuildInfo.KOTLIN_VERSION}\n")
+                    append("• Compose Multiplatform: ${BuildInfo.COMPOSE_VERSION}\n")
+                    append("• Material3: ${BuildInfo.MATERIAL3_VERSION}\n")
+                    append("• AGP: ${BuildInfo.AGP_VERSION}\n")
+                    append("• SDK: Compile ${BuildInfo.COMPILE_SDK}, Target ${BuildInfo.TARGET_SDK}, Min ${BuildInfo.MIN_SDK}")
                 },
                 modifier = Modifier
                     .weight(1f)
