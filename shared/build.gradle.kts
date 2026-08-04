@@ -78,6 +78,7 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
     val targetSdk = project.property("android.targetSdk").toString()
     val appVersionName = project.property("android.versionName").toString()
     val appVersionCode = project.property("android.versionCode").toString()
+    val gradleVersion = project.gradle.gradleVersion
 
     inputs.property("agpVersion", agpVersion)
     inputs.property("kotlinVersion", kotlinVersion)
@@ -88,6 +89,7 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
     inputs.property("targetSdk", targetSdk)
     inputs.property("appVersionName", appVersionName)
     inputs.property("appVersionCode", appVersionCode)
+    inputs.property("gradleVersion", gradleVersion)
     
     outputs.file(outputFile)
 
@@ -108,6 +110,7 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
                     const val TARGET_SDK = "$targetSdk"
                     const val APP_VERSION_NAME = "$appVersionName"
                     const val APP_VERSION_CODE = "$appVersionCode"
+                    const val GRADLE_VERSION = "$gradleVersion"
                 }
                 """.trimIndent()
             )

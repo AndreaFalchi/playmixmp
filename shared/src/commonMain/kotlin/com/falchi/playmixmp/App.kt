@@ -320,6 +320,7 @@ fun AboutPage(onDismiss: () -> Unit) {
                     append("• Compose Multiplatform: ${BuildInfo.COMPOSE_VERSION}\n")
                     append("• Material3: ${BuildInfo.MATERIAL3_VERSION}\n")
                     append("• AGP: ${BuildInfo.AGP_VERSION}\n")
+                    append("• Gradle: ${BuildInfo.GRADLE_VERSION}\n")
                     append("• SDK: Compile ${BuildInfo.COMPILE_SDK}, Target ${BuildInfo.TARGET_SDK}, Min ${BuildInfo.MIN_SDK}")
                 },
                 modifier = Modifier
